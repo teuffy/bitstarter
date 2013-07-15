@@ -24,8 +24,11 @@ References:
 var fs = require('fs');
 var program = require('commander');
 var cheerio = require('cheerio');
+var rest = require('restler');
 var HTMLFILE_DEFAULT = "index.html";
+var outfile = "toto.html";
 var CHECKSFILE_DEFAULT = "checks.json";
+var URL_DEFAULT = "http://gentle-sea-9468.herokuapp.com";
 
 var assertFileExists = function(infile) {
     var instr = infile.toString();
@@ -39,6 +42,8 @@ var assertFileExists = function(infile) {
 var cheerioHtmlFile = function(htmlfile) {
     return cheerio.load(fs.readFileSync(htmlfile));
 };
+
+/*var assertUrlExists = function(val){return val.toString();*/
 
 var loadChecks = function(checksfile) {
     return JSON.parse(fs.readFileSync(checksfile));
@@ -61,14 +66,37 @@ var clone = function(fn) {
     return fn.bind({});
 };
 
+var response2console = function(result, response) {
+ if (result instanceof Error) {
+     console.error('Error: ' + util.format(result.message));
+ }
+ else {
+   console.error("Wrote %s", outfile);
+  fs.writeFileSync(outfile, result);
+ }
+};
+
 if(require.main == module) {
     program
 	.option('-c, --checks <check_file>', 'Path to checks.json', clone(assertFileExists), CHECKSFILE_DEFAULT)
 	.option('-f, --file <Html_File>', 'Path To Index.Html', clone(assertFileExists), HTMLFILE_DEFAULT)
+	.option('-u, --url <url_file>', 'Path to http://gentle-sea-9468.herokuapp.com')
 	.parse(process.argv);
+ if (program.url) {
+
+     rest.get(program.url).on('complete', function(cont){
+     fs.writeFileSync(outfile,cont,'utf8');
+     });
+  /*fs.writeFileSync("myfile.html", result);*/
+      var checkJson = checkHtmlFile(outfile, program.checks);
+      var outJson = JSON.stringify(checkJson, null, 4);
+ }
+ else {
     var checkJson = checkHtmlFile(program.file, program.checks);
     var outJson = JSON.stringify(checkJson, null, 4);
     console.log(outJson);
-} else {
+ }
+}
+else {
     exports.checkHtmlFile = checkHtmlFile;
 }
